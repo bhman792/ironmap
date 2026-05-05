@@ -20,13 +20,17 @@ Every other fitness app tracks what you did. IronMap also tells you what you're 
 
 ## Screenshots
 
-> Dashboard with volume chart and hover tooltips
+![Dashboard](https://raw.githubusercontent.com/bhman792/ironmap/main/screenshots/Dashboard.png)
+*Dashboard with volume chart — hover any bar to see full workout details*
 
-> Workout logging with gym-aware autocomplete and last performance recap
+![Workout Logging](https://raw.githubusercontent.com/bhman792/ironmap/main/screenshots/Workout.png)
+*Gym-aware workout logging with last performance recap and confirmed equipment badge*
 
-> Gym equipment database with condition tracking and OOS reporting
+![Gym Equipment](https://raw.githubusercontent.com/bhman792/ironmap/main/screenshots/Equipment.png)
+*Community gym equipment database with condition tracking and OOS reporting*
 
-> Personal records by exercise and machine
+![Personal Records](https://raw.githubusercontent.com/bhman792/ironmap/main/screenshots/PR.png)
+*Personal records by exercise and machine with estimated 1RM*
 
 ## Tech stack
 
