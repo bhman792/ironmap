@@ -1,0 +1,89 @@
+# ============================================================
+#  FitTrack — Docker Compose Stack
+#  Services: PostgreSQL + Node.js API + Nginx + Renpho Sync
+#
+#  Place this file at:
+#    /mnt/user/appdata/fittrack/docker-compose.yml
+#  Then run: docker compose up -d --build
+# ============================================================
+
+services:
+
+  # ── 1. PostgreSQL database ─────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: fittrack-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB:       fittrack
+      POSTGRES_USER:     fittrack
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - /mnt/user/appdata/fittrack/postgres:/var/lib/postgresql/data
+      - /mnt/user/appdata/fittrack/init:/docker-entrypoint-initdb.d
+    networks:
+      - fittrack-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fittrack -d fittrack"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── 2. Node.js API ─────────────────────────────────────────
+  api:
+    build:
+      context: /mnt/user/appdata/fittrack/api
+      dockerfile: Dockerfile
+    container_name: fittrack-api
+    restart: unless-stopped
+    environment:
+      PORT:        3000
+      DB_HOST:     postgres
+      DB_PORT:     5432
+      DB_NAME:     fittrack
+      DB_USER:     fittrack
+      DB_PASSWORD: ${DB_PASSWORD}
+      CORS_ORIGIN: http://${UNRAID_IP}
+    networks:
+      - fittrack-net
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ── 3. Nginx (web server + reverse proxy) ──────────────────
+  nginx:
+    image: nginx:alpine
+    container_name: fittrack-nginx
+    restart: unless-stopped
+    ports:
+      - "8085:80"
+    volumes:
+      - /mnt/user/appdata/fittrack/www:/usr/share/nginx/html:ro
+      - /mnt/user/appdata/fittrack/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    networks:
+      - fittrack-net
+    depends_on:
+      - api
+
+  # ── 4. Renpho sync (Python cron job) ───────────────────────
+  renpho:
+    build:
+      context: /mnt/user/appdata/fittrack/renpho
+      dockerfile: Dockerfile
+    container_name: fittrack-renpho
+    restart: unless-stopped
+    networks:
+      - fittrack-net
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+# ── Shared private network ───────────────────────────────────
+networks:
+  fittrack-net:
+    driver: bridge
+
+
+
+x
+

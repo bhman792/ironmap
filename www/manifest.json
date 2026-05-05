@@ -1,0 +1,40 @@
+{
+  "name": "IronMap",
+  "short_name": "IronMap",
+  "description": "Your gym, your data. Community-powered gym equipment mapping.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0e0e12",
+  "theme_color": "#0e0e12",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icons/icon_192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon_512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["fitness", "health", "sports"],
+  "shortcuts": [
+    {
+      "name": "Log Workout",
+      "short_name": "Workout",
+      "url": "/?tab=workout",
+      "description": "Log a new workout session"
+    },
+    {
+      "name": "Body Metrics",
+      "short_name": "Metrics",
+      "url": "/?tab=metrics",
+      "description": "View body metrics"
+    }
+  ]
+}

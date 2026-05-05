@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IronMap — Know Your Gym</title>
+<meta name="description" content="The fitness tracker that knows exactly what equipment is at your gym, its condition, and whether it's broken today. Community-powered. Free forever.">
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,300;0,400;0,500;0,600;1,300&family=Barlow+Condensed:wght@600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg:#080810; --bg2:#0f0f1a; --surface:#161622; --surface2:#1e1e2e;
+    --border:rgba(255,255,255,0.07); --border2:rgba(255,255,255,0.13);
+    --text:#f0eff8; --text2:#9b9ab0; --text3:#4e4d62;
+    --blue:#4f8ef7; --purple:#8b6ef7; --green:#3dd68c; --amber:#f5a623; --coral:#f7654f;
+    --grad:linear-gradient(135deg,#4f8ef7,#8b6ef7);
+  }
+  html { scroll-behavior: smooth; }
+  body { font-family:'Barlow',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; -webkit-font-smoothing:antialiased; overflow-x:hidden; }
+  body::before { content:''; position:fixed; inset:0; background-image:linear-gradient(rgba(79,142,247,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(79,142,247,0.03) 1px,transparent 1px); background-size:60px 60px; pointer-events:none; z-index:0; }
+
+  /* Nav */
+  nav { position:fixed; top:0; left:0; right:0; z-index:100; display:flex; align-items:center; justify-content:space-between; padding:0 40px; height:64px; background:rgba(8,8,16,0.85); backdrop-filter:blur(20px); border-bottom:0.5px solid var(--border); }
+  .nav-logo { font-family:'Barlow Condensed',sans-serif; font-size:22px; font-weight:800; letter-spacing:1px; text-transform:uppercase; text-decoration:none; color:var(--text); }
+  .nav-logo span { background:var(--grad); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+  .nav-links { display:flex; align-items:center; gap:28px; }
+  .nav-links a { font-size:13px; font-weight:500; color:var(--text2); text-decoration:none; transition:color 0.15s; }
+  .nav-links a:hover { color:var(--text); }
+
+  .btn { display:inline-flex; align-items:center; gap:8px; padding:10px 22px; border-radius:10px; font-size:14px; font-weight:700; font-family:'Barlow',sans-serif; letter-spacing:0.3px; text-decoration:none; transition:all 0.15s; cursor:pointer; border:none; }
+  .btn-primary { background:var(--grad); color:#fff; box-shadow:0 4px 20px rgba(79,142,247,0.3); }
+  .btn-primary:hover { opacity:0.88; transform:translateY(-1px); box-shadow:0 6px 28px rgba(79,142,247,0.4); }
+  .btn-outline { background:transparent; color:var(--text2); border:0.5px solid var(--border2); }
+  .btn-outline:hover { background:var(--surface2); color:var(--text); }
+  .btn-lg { padding:14px 32px; font-size:16px; border-radius:12px; }
+
+  section { position:relative; z-index:1; }
+
+  /* Hero */
+  .hero { min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:120px 24px 80px; }
+  .orb { position:absolute; border-radius:50%; filter:blur(100px); pointer-events:none; opacity:0.25; }
+  .orb-blue { width:500px; height:500px; background:#4f8ef7; top:5%; left:-15%; }
+  .orb-purple { width:600px; height:600px; background:#8b6ef7; top:15%; right:-20%; }
+
+  .hero-badge { display:inline-flex; align-items:center; gap:8px; padding:6px 16px; background:rgba(79,142,247,0.1); border:0.5px solid rgba(79,142,247,0.25); border-radius:20px; font-size:12px; font-weight:700; letter-spacing:0.8px; text-transform:uppercase; color:var(--blue); margin-bottom:32px; }
+  .hero-badge::before { content:''; width:6px; height:6px; border-radius:50%; background:var(--blue); box-shadow:0 0 8px var(--blue); }
+
+  .hero h1 { font-family:'Barlow Condensed',sans-serif; font-size:clamp(52px,10vw,100px); font-weight:900; line-height:0.93; letter-spacing:-1px; text-transform:uppercase; margin-bottom:28px; max-width:960px; }
+  .grad-text { background:var(--grad); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+  .hero-sub { font-size:clamp(16px,2.5vw,20px); font-weight:300; color:var(--text2); line-height:1.6; max-width:580px; margin-bottom:48px; }
+  .hero-cta { display:flex; gap:14px; flex-wrap:wrap; justify-content:center; margin-bottom:80px; }
+
+  /* App preview */
+  .hero-preview { width:100%; max-width:900px; background:var(--surface); border:0.5px solid var(--border2); border-radius:20px; overflow:hidden; box-shadow:0 40px 100px rgba(0,0,0,0.6),0 0 0 0.5px rgba(255,255,255,0.05); }
+  .preview-bar { background:var(--bg2); border-bottom:0.5px solid var(--border); padding:14px 20px; display:flex; align-items:center; gap:14px; }
+  .preview-dots { display:flex; gap:6px; }
+  .preview-dots span { width:10px; height:10px; border-radius:50%; }
+  .preview-dots span:nth-child(1) { background:#ff5f57; }
+  .preview-dots span:nth-child(2) { background:#ffbd2e; }
+  .preview-dots span:nth-child(3) { background:#28c840; }
+  .preview-url { flex:1; background:var(--surface2); border-radius:6px; padding:5px 12px; font-size:12px; color:var(--text3); font-family:monospace; }
+  .preview-content { padding:28px; display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:16px; }
+  .preview-stat { background:var(--surface2); border:0.5px solid var(--border); border-radius:12px; padding:14px; }
+  .preview-stat-label { font-size:9px; font-weight:700; letter-spacing:0.8px; text-transform:uppercase; color:var(--text3); margin-bottom:8px; }
+  .preview-stat-value { font-family:'Barlow Condensed',sans-serif; font-size:26px; font-weight:700; color:var(--text); }
+  .preview-stat-sub { font-size:11px; color:var(--text3); margin-top:2px; }
+  .preview-chart { margin:0 28px 28px; background:var(--surface2); border:0.5px solid var(--border); border-radius:12px; padding:18px; }
+  .preview-chart-title { font-size:10px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--text3); margin-bottom:14px; }
+  .preview-bars { display:flex; align-items:flex-end; gap:8px; height:70px; }
+  .preview-bar-col { flex:1; border-radius:4px 4px 0 0; background:var(--grad); opacity:0.75; }
+  .preview-bar-col.empty { background:var(--surface); opacity:1; border:0.5px solid var(--border); }
+
+  /* Section headings */
+  .section-label { display:inline-block; font-size:11px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:var(--blue); margin-bottom:14px; }
+  .section-title { font-family:'Barlow Condensed',sans-serif; font-size:clamp(36px,6vw,60px); font-weight:800; text-transform:uppercase; line-height:1; letter-spacing:-0.5px; margin-bottom:16px; }
+  .section-sub { font-size:17px; font-weight:300; color:var(--text2); line-height:1.65; max-width:520px; }
+
+  /* Community section — THE headline feature */
+  .community { padding:140px 40px; }
+  .community-inner { max-width:1100px; margin:0 auto; display:grid; grid-template-columns:1fr 1fr; gap:80px; align-items:center; }
+
+  .gym-mockup { background:var(--surface); border:0.5px solid var(--border2); border-radius:18px; overflow:hidden; box-shadow:0 20px 60px rgba(0,0,0,0.4); }
+  .gym-mock-header { padding:20px 24px; border-bottom:0.5px solid var(--border); }
+  .gym-mock-name { font-family:'Barlow Condensed',sans-serif; font-size:20px; font-weight:700; text-transform:uppercase; margin-bottom:4px; }
+  .gym-mock-meta { font-size:12px; color:var(--text3); }
+  .gym-mock-list { padding:16px 24px 24px; }
+  .gym-mock-cat { font-size:10px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--text3); margin-bottom:10px; }
+  .gym-eq-row { display:flex; align-items:center; justify-content:space-between; padding:10px 12px; background:var(--surface2); border-radius:8px; margin-bottom:6px; }
+  .gym-eq-name { font-size:13px; font-weight:500; }
+  .gym-eq-brand { font-size:11px; color:var(--text3); margin-top:2px; }
+  .eq-badge { font-size:10px; font-weight:700; letter-spacing:0.4px; padding:3px 9px; border-radius:5px; white-space:nowrap; }
+  .eq-good { background:rgba(61,214,140,0.1); color:#3dd68c; }
+  .eq-fair { background:rgba(245,166,35,0.1); color:#f5a623; }
+  .eq-oos  { background:rgba(247,101,79,0.1); color:#f7654f; }
+
+  .community-steps { display:flex; flex-direction:column; gap:28px; }
+  .step { display:flex; gap:18px; align-items:flex-start; }
+  .step-num { font-family:'Barlow Condensed',sans-serif; font-size:13px; font-weight:800; color:var(--blue); background:rgba(79,142,247,0.1); border:0.5px solid rgba(79,142,247,0.2); border-radius:8px; width:32px; height:32px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .step h4 { font-size:15px; font-weight:600; color:var(--text); margin-bottom:4px; }
+  .step p { font-size:13px; color:var(--text2); line-height:1.6; }
+
+  /* Features grid */
+  .features { padding:80px 40px 120px; background:var(--bg2); border-top:0.5px solid var(--border); border-bottom:0.5px solid var(--border); }
+  .features-inner { max-width:1100px; margin:0 auto; }
+  .features-header { margin-bottom:60px; }
+  .features-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+  .feat-card { background:var(--surface); border:0.5px solid var(--border); border-radius:16px; padding:28px; transition:border-color 0.2s,transform 0.2s; position:relative; overflow:hidden; }
+  .feat-card::after { content:''; position:absolute; top:0; left:0; right:0; height:1px; background:var(--grad); opacity:0; transition:opacity 0.2s; }
+  .feat-card:hover { border-color:var(--border2); transform:translateY(-2px); }
+  .feat-card:hover::after { opacity:1; }
+  .feat-icon { width:42px; height:42px; border-radius:11px; display:flex; align-items:center; justify-content:center; margin-bottom:18px; font-size:18px; }
+  .icon-blue { background:rgba(79,142,247,0.12); }
+  .icon-purple { background:rgba(139,110,247,0.12); }
+  .icon-green { background:rgba(61,214,140,0.12); }
+  .icon-amber { background:rgba(245,166,35,0.12); }
+  .icon-silver { background:rgba(200,200,224,0.1); }
+  .feat-card h3 { font-family:'Barlow Condensed',sans-serif; font-size:20px; font-weight:700; text-transform:uppercase; margin-bottom:8px; }
+  .feat-card p { font-size:13px; color:var(--text2); line-height:1.65; }
+
+  /* Pricing */
+  .pricing { padding:120px 40px; text-align:center; }
+  .pricing-inner { max-width:900px; margin:0 auto; }
+  .pricing-cards { display:grid; grid-template-columns:repeat(2,1fr); gap:14px; margin-top:60px; text-align:left; }
+  .pricing-card { background:var(--surface); border:0.5px solid var(--border); border-radius:18px; padding:36px; }
+  .pricing-card.featured { border-color:rgba(79,142,247,0.3); background:linear-gradient(135deg,rgba(79,142,247,0.08),rgba(139,110,247,0.08)); }
+  .price-label { font-size:11px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--text3); margin-bottom:12px; }
+  .price-amount { font-family:'Barlow Condensed',sans-serif; font-size:52px; font-weight:800; line-height:1; margin-bottom:4px; }
+  .price-amount span { font-size:18px; color:var(--text3); }
+  .price-sub { font-size:13px; color:var(--text3); margin-bottom:28px; }
+  .price-features { list-style:none; display:flex; flex-direction:column; gap:10px; }
+  .price-features li { font-size:13px; color:var(--text2); display:flex; align-items:center; gap:10px; }
+  .price-features li::before { content:'✓'; color:var(--green); font-weight:700; font-size:12px; }
+  .price-coming { color:var(--text3); font-style:italic; }
+  .price-coming::before { content:'→'; color:var(--text3) !important; }
+
+  /* Integrations */
+  .integrations { padding:80px 40px; border-top:0.5px solid var(--border); }
+  .integrations-inner { max-width:1100px; margin:0 auto; text-align:center; }
+  .integration-pills { display:flex; flex-wrap:wrap; justify-content:center; gap:10px; margin-top:40px; }
+  .pill { display:inline-flex; align-items:center; gap:8px; padding:10px 18px; background:var(--surface); border:0.5px solid var(--border2); border-radius:10px; font-size:13px; font-weight:500; color:var(--text2); }
+
+  /* CTA */
+  .cta-section { padding:120px 40px; background:var(--bg2); border-top:0.5px solid var(--border); text-align:center; }
+  .cta-inner { max-width:700px; margin:0 auto; }
+  .cta-section h2 { font-family:'Barlow Condensed',sans-serif; font-size:clamp(42px,7vw,76px); font-weight:900; text-transform:uppercase; line-height:1; letter-spacing:-1px; margin-bottom:20px; }
+  .cta-section p { font-size:17px; font-weight:300; color:var(--text2); margin-bottom:48px; line-height:1.6; }
+  .cta-btns { display:flex; gap:14px; justify-content:center; flex-wrap:wrap; }
+
+  /* Footer */
+  footer { padding:40px; border-top:0.5px solid var(--border); display:flex; align-items:center; justify-content:space-between; position:relative; z-index:1; }
+  .foot-logo { font-family:'Barlow Condensed',sans-serif; font-size:18px; font-weight:800; letter-spacing:1px; text-transform:uppercase; }
+  .foot-logo span { background:var(--grad); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+
+  /* Animations */
+  @keyframes fadeUp { from{opacity:0;transform:translateY(28px)} to{opacity:1;transform:translateY(0)} }
+  .fade-up { animation:fadeUp 0.7s ease forwards; }
+  .d1{animation-delay:0.1s;opacity:0} .d2{animation-delay:0.2s;opacity:0} .d3{animation-delay:0.35s;opacity:0} .d4{animation-delay:0.5s;opacity:0} .d5{animation-delay:0.7s;opacity:0}
+
+  /* Responsive */
+  @media(max-width:900px){
+    nav{padding:0 20px}
+    .nav-links{display:none}
+    .community{padding:80px 20px}
+    .community-inner{grid-template-columns:1fr;gap:48px}
+    .features{padding:60px 20px 80px}
+    .features-grid{grid-template-columns:1fr}
+    .pricing{padding:80px 20px}
+    .pricing-cards{grid-template-columns:1fr}
+    .cta-section{padding:80px 20px}
+    footer{padding:24px 20px;flex-direction:column;gap:12px;text-align:center}
+    .preview-content{grid-template-columns:repeat(2,1fr)}
+    .integrations{padding:60px 20px}
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="/landing" class="nav-logo" style="display:flex;align-items:center;gap:10px">
+    <img src="/favicon.png" alt="IronMap" style="width:32px;height:32px;border-radius:8px">
+    Iron<span>Map</span>
+  </a>
+  <div class="nav-links">
+    <a href="#community">How it works</a>
+    <a href="#features">Features</a>
+    <a href="#pricing">Pricing</a>
+    <a class="btn btn-primary" href="/" style="padding:8px 18px;font-size:13px">Open app →</a>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="orb orb-blue"></div>
+  <div class="orb orb-purple"></div>
+
+  <div style="margin-bottom:24px" class="fade-up d1">
+    <img src="/favicon.png" alt="IronMap" style="width:72px;height:72px;border-radius:18px;box-shadow:0 8px 32px rgba(79,142,247,0.3)">
+  </div>
+  <div class="hero-badge fade-up d1">Community-powered · Free in beta</div>
+
+  <h1 class="fade-up d2">
+    The app that<br>
+    <span class="grad-text">knows your gym.</span>
+  </h1>
+
+  <p class="hero-sub fade-up d3">
+    IronMap is the only fitness tracker with a community-powered equipment database.
+    Know what machines your gym has, their condition, and whether they're broken —
+    before you walk in.
+  </p>
+
+  <div class="hero-cta fade-up d4">
+    <a href="#founding" class="btn btn-primary btn-lg">Become a Founding Member →</a>
+    <a href="/" class="btn btn-outline btn-lg">Try the app</a>
+  </div>
+
+  <div class="hero-preview fade-up d5">
+    <div class="preview-bar">
+      <div class="preview-dots"><span></span><span></span><span></span></div>
+      <div class="preview-url">getironmap.com/app</div>
+    </div>
+    <div class="preview-content">
+      <div class="preview-stat">
+        <div class="preview-stat-label">This week</div>
+        <div class="preview-stat-value">4</div>
+        <div class="preview-stat-sub">workouts · 210 min</div>
+      </div>
+      <div class="preview-stat">
+        <div class="preview-stat-label">Cardio</div>
+        <div class="preview-stat-value">8.2 <span style="font-size:14px;color:var(--text3)">mi</span></div>
+        <div class="preview-stat-sub">3 sessions</div>
+      </div>
+      <div class="preview-stat">
+        <div class="preview-stat-label">Weight</div>
+        <div class="preview-stat-value">209 <span style="font-size:14px;color:var(--text3)">lbs</span></div>
+        <div class="preview-stat-sub">May 3, 2026</div>
+      </div>
+      <div class="preview-stat">
+        <div class="preview-stat-label">Calories</div>
+        <div class="preview-stat-value">1,820</div>
+        <div class="preview-stat-sub">today · 4 entries</div>
+      </div>
+    </div>
+    <div class="preview-chart">
+      <div class="preview-chart-title">Volume — last 7 days</div>
+      <div class="preview-bars">
+        <div class="preview-bar-col empty" style="height:4px"></div>
+        <div class="preview-bar-col" style="height:52px"></div>
+        <div class="preview-bar-col empty" style="height:4px"></div>
+        <div class="preview-bar-col" style="height:70px"></div>
+        <div class="preview-bar-col empty" style="height:4px"></div>
+        <div class="preview-bar-col" style="height:34px"></div>
+        <div class="preview-bar-col" style="height:58px"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Community — THE headline feature -->
+<section class="community" id="community">
+  <div class="community-inner">
+    <div>
+      <div class="section-label">The big idea</div>
+      <h2 class="section-title">Know before<br>you go.</h2>
+      <p class="section-sub" style="margin-bottom:48px">
+        Every other app tracks what you did. IronMap also tells you what you're walking into.
+        Members contribute real equipment data for their gym — machines, brands, conditions,
+        and when something breaks.
+      </p>
+
+      <div class="community-steps">
+        <div class="step">
+          <div class="step-num">01</div>
+          <div>
+            <h4>Find your gym</h4>
+            <p>Search by name, city, or zip. If your gym isn't there yet, add it in 30 seconds.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">02</div>
+          <div>
+            <h4>Confirm the equipment</h4>
+            <p>Add machines from the global library. Set condition and weight range. You're the source of truth for your gym.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">03</div>
+          <div>
+            <h4>Log smarter workouts</h4>
+            <p>Exercise suggestions come from what's actually on your gym's floor. History is tied to the specific machine — not just the movement.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">04</div>
+          <div>
+            <h4>Report issues in real time</h4>
+            <p>Cable snapped? Weight stack stuck? Flag it. The next member sees it before they make the drive. Flags auto-clear after 30 days.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Gym equipment mockup -->
+    <div class="gym-mockup">
+      <div class="gym-mock-header">
+        <div class="gym-mock-name">Ironside Fitness</div>
+        <div class="gym-mock-meta">Commercial · 47 workouts logged</div>
+      </div>
+      <div class="gym-mock-list">
+        <div class="gym-mock-cat">Chest</div>
+        <div class="gym-eq-row">
+          <div>
+            <div class="gym-eq-name">ISO Lateral Chest Press</div>
+            <div class="gym-eq-brand">Hammer Strength · Plate-loaded</div>
+          </div>
+          <span class="eq-badge eq-good">Excellent</span>
+        </div>
+        <div class="gym-eq-row">
+          <div>
+            <div class="gym-eq-name">Chest Press</div>
+            <div class="gym-eq-brand">Life Fitness · 10–200 lbs</div>
+          </div>
+          <span class="eq-badge eq-fair">Fair</span>
+        </div>
+        <div class="gym-mock-cat" style="margin-top:14px">Legs</div>
+        <div class="gym-eq-row">
+          <div>
+            <div class="gym-eq-name">Leg Press</div>
+            <div class="gym-eq-brand">Hammer Strength · Plate-loaded</div>
+          </div>
+          <span class="eq-badge eq-oos">Out of service</span>
+        </div>
+        <div class="gym-eq-row">
+          <div>
+            <div class="gym-eq-name">Leg Extension</div>
+            <div class="gym-eq-brand">Life Fitness · 20–200 lbs</div>
+          </div>
+          <span class="eq-badge eq-good">Good</span>
+        </div>
+        <div class="gym-eq-row">
+          <div>
+            <div class="gym-eq-name">Squat Rack</div>
+            <div class="gym-eq-brand">Generic · Free weights</div>
+          </div>
+          <span class="eq-badge eq-good">Good</span>
+        </div>
+        <div style="margin-top:16px;padding:10px 12px;background:rgba(79,142,247,0.08);border-radius:8px;border:0.5px solid rgba(79,142,247,0.15)">
+          <div style="font-size:11px;font-weight:700;color:var(--blue);margin-bottom:2px">✓ Confirmed at your gym</div>
+          <div style="font-size:11px;color:var(--text3)">Last on Hammer Strength ISO Lateral: 3 sets — 135×10 · 145×8 · 155×6</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+  <!-- Workout recap feature highlight -->
+  <section style="padding:100px 40px;background:var(--bg);">
+    <div style="max-width:1100px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:center;">
+      <div>
+        <div class="section-label">Mid-workout intelligence</div>
+        <h2 class="section-title">Your last session,<br><span class="grad-text">right there.</span></h2>
+        <p class="section-sub" style="margin-bottom:32px">
+          Type an exercise name and IronMap instantly shows what you lifted last time — 
+          every set, every rep, every weight. No navigating away. No losing your place.
+          Just the data you need, exactly when you need it.
+        </p>
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <div style="display:flex;align-items:center;gap:12px;font-size:14px;color:var(--text2)">
+            <div style="width:28px;height:28px;border-radius:8px;background:var(--blue-bg);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px">⚡</div>
+            Shows up automatically as you type
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;font-size:14px;color:var(--text2)">
+            <div style="width:28px;height:28px;border-radius:8px;background:var(--green-bg);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px">📍</div>
+            Tied to the specific machine at your gym
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;font-size:14px;color:var(--text2)">
+            <div style="width:28px;height:28px;border-radius:8px;background:var(--purple-bg);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px">🎯</div>
+            Never second-guess your starting weight again
+          </div>
+        </div>
+      </div>
+
+      <!-- Exercise block mockup -->
+      <div style="background:var(--surface);border:0.5px solid var(--border2);border-radius:18px;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,0.4);">
+        <!-- Gym selector -->
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;padding:10px 12px;background:var(--surface2);border-radius:10px;border:0.5px solid var(--border)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          <span style="font-size:13px;color:var(--text2)">Ironside Fitness</span>
+          <span style="margin-left:auto;font-size:10px;font-weight:700;letter-spacing:0.5px;color:var(--green);background:var(--green-bg);padding:2px 8px;border-radius:5px">✓ Gym selected</span>
+        </div>
+
+        <!-- Exercise block -->
+        <div style="background:var(--surface2);border:0.5px solid var(--border2);border-radius:12px;padding:14px;">
+          <!-- Exercise name input -->
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+            <div style="flex:1;background:var(--surface3);border:0.5px solid var(--blue);border-radius:8px;padding:9px 12px;font-size:14px;color:var(--text);box-shadow:0 0 0 3px rgba(79,142,247,0.1)">
+              Bench Press
+              <span style="border-right:1.5px solid var(--blue);margin-left:1px;animation:blink 1s infinite"> </span>
+            </div>
+            <div style="width:30px;height:30px;background:none;border:0.5px solid var(--border2);border-radius:7px;display:flex;align-items:center;justify-content:center;color:var(--text3);font-size:16px;margin-top:0">×</div>
+          </div>
+
+          <!-- Gym confirmed badge -->
+          <div style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--green);margin-bottom:8px;padding:7px 10px;background:var(--green-bg);border-radius:7px;border:0.5px solid rgba(61,214,140,0.2)">
+            ✓ Confirmed at your gym · Hammer Strength
+          </div>
+
+          <!-- Last performance recap -->
+          <div style="background:var(--blue-bg);border-radius:7px;padding:10px 12px;margin-bottom:10px;border:0.5px solid rgba(79,142,247,0.2)">
+            <div style="font-size:10px;font-weight:700;color:var(--blue-text);opacity:0.7;margin-bottom:6px;letter-spacing:0.3px;text-transform:uppercase">Last (Apr 28) · Hammer Strength</div>
+            <div style="display:flex;gap:8px;padding:2px 0"><span style="color:var(--blue-text);opacity:0.6;font-size:10px;font-weight:700;min-width:40px;padding-top:2px">Set 1</span><span style="font-size:13px;color:var(--blue-text)">135 lbs × 10 reps</span></div>
+            <div style="display:flex;gap:8px;padding:2px 0"><span style="color:var(--blue-text);opacity:0.6;font-size:10px;font-weight:700;min-width:40px;padding-top:2px">Set 2</span><span style="font-size:13px;color:var(--blue-text)">145 lbs × 8 reps  RPE 7</span></div>
+            <div style="display:flex;gap:8px;padding:2px 0"><span style="color:var(--blue-text);opacity:0.6;font-size:10px;font-weight:700;min-width:40px;padding-top:2px">Set 3</span><span style="font-size:13px;color:var(--blue-text)">155 lbs × 6 reps  RPE 9</span></div>
+          </div>
+
+          <!-- Set rows header -->
+          <div style="display:grid;grid-template-columns:32px 1fr 1fr 1fr auto;gap:8px;margin-bottom:6px">
+            <span style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text3);text-align:center">Set</span>
+            <span style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text3);text-align:center">Reps</span>
+            <span style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text3);text-align:center">Weight</span>
+            <span style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text3);text-align:center">RPE</span>
+            <span></span>
+          </div>
+
+          <!-- Set rows -->
+          <div style="display:grid;grid-template-columns:32px 1fr 1fr 1fr auto;gap:8px;margin-bottom:6px;align-items:center">
+            <span style="font-size:11px;font-weight:700;color:var(--text3);text-align:center">1</span>
+            <div style="background:var(--surface3);border:0.5px solid var(--border2);border-radius:7px;padding:7px 8px;font-size:13px;color:var(--text)">10</div>
+            <div style="background:var(--surface3);border:0.5px solid var(--border2);border-radius:7px;padding:7px 8px;font-size:13px;color:var(--text)">135</div>
+            <div style="background:var(--surface3);border:0.5px solid var(--border2);border-radius:7px;padding:7px 8px;font-size:13px;color:var(--text3)"></div>
+            <div style="width:24px"></div>
+          </div>
+          <div style="display:grid;grid-template-columns:32px 1fr 1fr 1fr auto;gap:8px;align-items:center">
+            <span style="font-size:11px;font-weight:700;color:var(--text3);text-align:center">2</span>
+            <div style="background:var(--surface3);border:0.5px solid var(--border2);border-radius:7px;padding:7px 8px;font-size:13px;color:var(--text3);font-style:italic">reps</div>
+            <div style="background:var(--surface3);border:0.5px solid var(--border2);border-radius:7px;padding:7px 8px;font-size:13px;color:var(--text3);font-style:italic">lbs</div>
+            <div style="background:var(--surface3);border:0.5px solid var(--border2);border-radius:7px;padding:7px 8px;font-size:13px;color:var(--text3)"></div>
+            <div style="width:24px"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <style>
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+    @media(max-width:900px) {
+      #recap-section { padding:80px 20px !important; }
+      #recap-section > div { grid-template-columns:1fr !important; gap:40px !important; }
+    }
+  </style>
+<section class="features" id="features">
+  <div class="features-inner">
+    <div class="features-header">
+      <div class="section-label">Everything you need</div>
+      <h2 class="section-title">A full fitness tracker,<br>not just a logger.</h2>
+    </div>
+    <div class="features-grid">
+      <div class="feat-card">
+        <div class="feat-icon icon-blue">📊</div>
+        <h3>Volume tracking</h3>
+        <p>See total pounds lifted per day, not just workout count. Hover any bar to see the full workout — every exercise, every set.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon icon-purple">⚡</div>
+        <h3>Last performance recap</h3>
+        <p>Type an exercise and instantly see your last sets, reps, and weights for that specific machine at your gym. Right in the logging form.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon icon-green">⚖️</div>
+        <h3>Scale sync</h3>
+        <p>Compatible with Renpho smart scales. Weight, body fat, and muscle mass sync automatically every morning — no manual entry.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon icon-amber">🥗</div>
+        <h3>Nutrition tracking</h3>
+        <p>Log daily calories and macros. Import directly from MyNetDiary CSV exports. Weekly averages and progress toward your calorie goal.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon icon-silver">📈</div>
+        <h3>Weight & goal tracking</h3>
+        <p>Set a goal weight and weekly rate of loss. See weekly averages, progress bars, and a weight trend chart with hover tooltips.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon icon-blue">💾</div>
+        <h3>Draft auto-save</h3>
+        <p>Mid-workout page refresh? No problem. Your workout is saved automatically as you go and restored instantly when you reopen the app.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Pricing -->
+<section class="pricing" id="pricing">
+  <div class="pricing-inner">
+    <div class="section-label">Simple pricing</div>
+    <h2 class="section-title">Free during beta.<br><span class="grad-text">No surprises.</span></h2>
+    <p class="section-sub" style="margin:0 auto;">IronMap is free to use while we're in beta. The community gym database gets more valuable as more people contribute — that's the whole point.</p>
+
+    <div class="pricing-cards">
+      <div class="pricing-card">
+        <div class="price-label">Self-hosted</div>
+        <div class="price-amount">$0 <span>/ beta</span></div>
+        <div class="price-sub">Run it on your own server</div>
+        <ul class="price-features">
+          <li>Full access to all features</li>
+          <li>Community gym equipment database</li>
+          <li>Your data on your hardware</li>
+          <li>Docker-based setup</li>
+          <li>Open source on GitHub</li>
+        </ul>
+      </div>
+      <div class="pricing-card featured">
+        <div class="price-label">Hosted</div>
+        <div class="price-amount">$0 <span>/ beta</span></div>
+        <div class="price-sub">We manage everything for you</div>
+        <ul class="price-features">
+          <li>No setup required</li>
+          <li>Community gym equipment database</li>
+          <li>Automatic backups</li>
+          <li>Mobile PWA install</li>
+          <li class="price-coming">Coming soon — join the waitlist</li>
+        </ul>
+      </div>
+    </div>
+    <p style="font-size:12px;color:var(--text3);margin-top:24px;text-align:center">Pricing for hosted plans will be announced before launch. Self-hosted will always be open source.</p>
+  </div>
+</section>
+
+<!-- Integrations -->
+<section class="integrations">
+  <div class="integrations-inner">
+    <div class="section-label">Works with</div>
+    <h2 class="section-title" style="font-size:clamp(28px,4vw,42px)">Your existing tools</h2>
+    <div class="integration-pills">
+      <div class="pill">⚖️ Renpho smart scales</div>
+      <div class="pill">🥗 MyNetDiary CSV export</div>
+      <div class="pill">🐳 Docker / Unraid</div>
+      <div class="pill">☁️ Cloudflare tunnels</div>
+      <div class="pill">🐘 PostgreSQL</div>
+      <div class="pill">📱 Android &amp; iOS (PWA)</div>
+    </div>
+  </div>
+</section>
+
+<!-- Founding Member -->
+<section class="cta-section" id="founding" style="background:var(--bg);border-top:0.5px solid var(--border)">
+  <div class="cta-inner">
+    <!-- Founding badge -->
+    <div style="display:inline-flex;align-items:center;gap:8px;padding:6px 16px;background:rgba(245,166,35,0.1);border:0.5px solid rgba(245,166,35,0.3);border-radius:20px;font-size:12px;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;color:var(--amber);margin-bottom:28px">
+      🏆 Founding Member Program
+    </div>
+
+    <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:clamp(40px,7vw,72px);font-weight:900;text-transform:uppercase;line-height:1;letter-spacing:-1px;margin-bottom:20px">
+      First 500 members<br><span class="grad-text">get free lifetime access.</span>
+    </h2>
+
+    <p style="font-size:17px;font-weight:300;color:var(--text2);margin-bottom:16px;line-height:1.6;max-width:560px;margin-left:auto;margin-right:auto">
+      Help us build the world's first community gym equipment database and lock in free lifetime access to IronMap — forever. No credit card. No catch.
+    </p>
+
+    <!-- Spots counter -->
+    <div style="display:inline-flex;align-items:center;gap:10px;padding:10px 20px;background:var(--surface);border:0.5px solid var(--border2);border-radius:12px;margin-bottom:40px">
+      <div style="display:flex;gap:4px">
+        <div style="width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green)"></div>
+      </div>
+      <span style="font-size:13px;font-weight:600;color:var(--text2)">Founding spots available — <span style="color:var(--amber);font-weight:700">limited to 500</span></span>
+    </div>
+
+    <!-- What you get -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:48px;text-align:left">
+      <div style="background:var(--surface);border:0.5px solid var(--border2);border-radius:14px;padding:20px">
+        <div style="font-size:24px;margin-bottom:10px">🎟️</div>
+        <div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px">Free lifetime access</div>
+        <div style="font-size:12px;color:var(--text3);line-height:1.5">When hosted plans launch, you pay nothing. Ever.</div>
+      </div>
+      <div style="background:var(--surface);border:0.5px solid var(--border2);border-radius:14px;padding:20px">
+        <div style="font-size:24px;margin-bottom:10px">🏅</div>
+        <div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px">Founding member badge</div>
+        <div style="font-size:12px;color:var(--text3);line-height:1.5">Permanent recognition as one of the first 500 who made IronMap possible.</div>
+      </div>
+      <div style="background:var(--surface);border:0.5px solid var(--border2);border-radius:14px;padding:20px">
+        <div style="font-size:24px;margin-bottom:10px">🗺️</div>
+        <div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px">Shape the roadmap</div>
+        <div style="font-size:12px;color:var(--text3);line-height:1.5">Direct input on what we build next. Your gym, your features.</div>
+      </div>
+    </div>
+
+    <!-- What we ask -->
+    <div style="background:var(--surface);border:0.5px solid rgba(79,142,247,0.2);border-radius:16px;padding:24px 32px;margin-bottom:48px;text-align:left;max-width:560px;margin-left:auto;margin-right:auto">
+      <div style="font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--blue);margin-bottom:14px">What we ask in return</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="display:flex;align-items:center;gap:12px;font-size:14px;color:var(--text2)">
+          <span style="color:var(--green);font-weight:700">✓</span> Add your gym to the IronMap database
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;font-size:14px;color:var(--text2)">
+          <span style="color:var(--green);font-weight:700">✓</span> Confirm at least 5 pieces of equipment
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;font-size:14px;color:var(--text2)">
+          <span style="color:var(--green);font-weight:700">✓</span> That's it — takes about 2 minutes
+        </div>
+      </div>
+    </div>
+
+    <!-- Email signup form -->
+    <div style="max-width:480px;margin:0 auto">
+      <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center">
+        <input type="email" id="founding-email" placeholder="your@email.com"
+          style="flex:1;min-width:220px;background:var(--surface);border:0.5px solid var(--border2);border-radius:10px;padding:13px 16px;font-size:15px;font-family:'Barlow',sans-serif;color:var(--text);outline:none"
+          onkeydown="if(event.key==='Enter')joinFoundingMembers()">
+        <button onclick="joinFoundingMembers()" id="founding-btn" class="btn btn-primary" style="padding:13px 24px;font-size:15px;border-radius:10px;white-space:nowrap">
+          Reserve my spot →
+        </button>
+      </div>
+      <div id="founding-msg" style="margin-top:14px;font-size:13px;display:none"></div>
+      <p style="font-size:12px;color:var(--text3);margin-top:14px">We'll send you an invite code when your spot is confirmed. No spam.</p>
+    </div>
+  </div>
+</section>
+
+<script>
+async function joinFoundingMembers() {
+  const email = document.getElementById('founding-email').value.trim();
+  const msg   = document.getElementById('founding-msg');
+  const btn   = document.getElementById('founding-btn');
+  if (!email || !email.includes('@')) {
+    msg.style.display = 'block';
+    msg.style.color = '#f7654f';
+    msg.textContent = 'Please enter a valid email address.';
+    return;
+  }
+  btn.disabled = true;
+  btn.textContent = 'Reserving…';
+  try {
+    const res = await fetch('/api/waitlist', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    });
+    const data = await res.json();
+    msg.style.display = 'block';
+    if (res.ok) {
+      msg.style.color = '#3dd68c';
+      msg.innerHTML = '🎉 ' + data.message;
+      document.getElementById('founding-email').value = '';
+      btn.textContent = "You're on the list!";
+    } else {
+      msg.style.color = '#f7654f';
+      msg.textContent = data.error || 'Something went wrong. Try again.';
+      btn.disabled = false;
+      btn.textContent = 'Reserve my spot →';
+    }
+  } catch(e) {
+    msg.style.display = 'block';
+    msg.style.color = '#f7654f';
+    msg.textContent = 'Something went wrong. Try again.';
+    btn.disabled = false;
+    btn.textContent = 'Reserve my spot →';
+  }
+}
+</script>
+
+<!-- CTA -->
+<section class="cta-section">
+  <div class="cta-inner">
+    <h2>Start tracking.<br><span class="grad-text">Know your gym.</span></h2>
+    <p>Join the founding 500 and get free lifetime access. Or try the app right now — no account needed to explore.</p>
+    <div class="cta-btns">
+      <a href="#founding" class="btn btn-primary btn-lg">Become a Founding Member →</a>
+      <a href="/" class="btn btn-outline btn-lg">Try the app</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <a href="/" style="display:flex;align-items:center;gap:10px;text-decoration:none">
+    <img src="/favicon.png" alt="IronMap" style="width:28px;height:28px;border-radius:7px">
+    <div class="foot-logo">Iron<span>Map</span></div>
+  </a>
+  <p style="font-size:12px;color:var(--text3)">Open source fitness tracking · Community gym equipment database</p>
+  <p style="font-size:12px;color:var(--text3)">© 2026 IronMap</p>
+</footer>
+
+</body>
+</html>
